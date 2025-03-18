@@ -43,19 +43,19 @@ This project automates the process of retrieving and processing people data from
      ```env
      APOLLO_API_KEY=your_apollo_api_key
      DEEPSEEK_API_KEY=your_deepseek_api_key
-     DEEPSEEK_PROMPT="Your AI prompt"
+     DEEPSEEK_PROMPT="Write a personalized email and a follow-up email for a partnership with Nobisoft. Ensure proper formatting with line breaks so the email  are easy to read."
      CSV_FILENAME=result.csv
      PAGE=1
      PER_PAGE=10
-     PERSON_TITLES=CEO,CTO
-     PERSON_LOCATIONS=USA
+     PERSON_TITLES=ceo,cto
+     PERSON_LOCATIONS=usa,uk
      PERSON_SENIORITIES=Executive
-     ORGANIZATION_LOCATIONS=USA
-     Q_ORGANIZATION_DOMAINS_LIST=
-     CONTACT_EMAIL_STATUS=
+     ORGANIZATION_LOCATIONS=usa,uk
+     Q_ORGANIZATION_DOMAINS_LIST=apollo.io,microsoft.com
+     CONTACT_EMAIL_STATUS=verified,unverified
      ORGANIZATION_IDS=
-     ORGANIZATION_NUM_EMPLOYEES_RANGES=
-     Q_KEYWORDS=
+     ORGANIZATION_NUM_EMPLOYEES_RANGES=1,50
+     Q_KEYWORDS=ai, research
      ```
 
 ## Usage
