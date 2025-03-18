@@ -4,6 +4,7 @@ import csv
 import logging
 import requests
 import time
+import argparse
 from dotenv import load_dotenv
 from litellm import completion
 
@@ -20,12 +21,17 @@ logging.basicConfig(
     ]
 )
 
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description='Process people data from Apollo API or CSV file')
+parser.add_argument('--input', type=str, help='Path to input CSV file')
+args = parser.parse_args()
+
 APOLLO_API_KEY = os.getenv("APOLLO_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_PROMPT = os.getenv("DEEPSEEK_PROMPT", "")
 CSV_FILENAME = os.getenv("CSV_FILENAME", "result.csv")
 
-if not CSV_FILENAME.strip():  # Kiểm tra nếu rỗng hoặc chỉ chứa khoảng trắng
+if not CSV_FILENAME.strip():  # Check if empty or contains only whitespace
     CSV_FILENAME = "result.csv"
 
 HEADERS = {
@@ -120,7 +126,7 @@ def generate_email_content(profile_data):
             messages=[{"role": "user", "content": DEEPSEEK_PROMPT + content}]
         )
         elapsed_time = time.time() - start_time
-        return response.json()
+        return response
     except Exception as e:
         logging.error(f"Error generating email content: {str(e)}")
         return {"choices": [{"message": {"content": "[]"}}]}
@@ -261,19 +267,127 @@ def search_people():
     except Exception as e:
         logging.error(f"Exception during people search: {str(e)}")
 
+def process_csv_file(csv_path):
+    """Process data from an input CSV file."""
+    logging.info(f"Starting CSV file processing mode with file: {csv_path}")
+    
+    if not os.path.exists(csv_path):
+        logging.error(f"Input CSV file does not exist: {csv_path}")
+        return
+    
+    try:
+        # Read the input CSV file
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        
+        total_rows = len(rows)
+        
+        # Create output CSV filename
+        output_path = f"{os.path.splitext(os.path.basename(csv_path))[0]}_with_email.csv"        
+        if os.path.exists(output_path):
+            base, ext = os.path.splitext(output_path)
+            counter = 1
+            while os.path.exists(f"{base}_{counter}{ext}"):
+                counter += 1
+            output_path = f"{base}_{counter}{ext}"
+        
+        logging.info(f"Output will be saved to: {output_path}")
+        
+        # Open output CSV file
+        with open(output_path, 'w', newline='', encoding='utf-8') as f_out:
+            # Get all field names from the input CSV plus our new email fields
+            fieldnames = list(rows[0].keys()) + [
+                "Mail Subject", 
+                "Main Email", 
+                "Second Subject", 
+                "Second Email"
+            ]
+            
+            writer = csv.DictWriter(f_out, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
+            writer.writeheader()
+            
+            # Process each row
+            for idx, row in enumerate(rows, 1):
+                logging.info(f"Processing row {idx}/{total_rows}: {row.get('First Name', '')} {row.get('Last Name', '')}")
+                
+                # Prepare data for Deepseek in the same format as we use for Apollo data
+                profile_data = {
+                    "person": {
+                        "first_name": row.get("First Name", ""),
+                        "last_name": row.get("Last Name", ""),
+                        "title": row.get("Title", ""),
+                        "email": row.get("Email", ""),
+                        "headline": ""
+                    },
+                    "organization": {
+                        "name": row.get("Company", ""),
+                        "city": row.get("Company City", ""),
+                        "technology_names": row.get("Technologies", "").split(", ") if row.get("Technologies") else [],
+                        "industries": [row.get("Industry", "")] if row.get("Industry") else [],
+                        "keywords": row.get("Keywords", "").split(", ") if row.get("Keywords") else [],
+                        "estimated_num_employees": row.get("# Employees", ""),
+                        "website": row.get("Website", "")
+                    }
+                }
+                
+                # Generate email content
+                deepseek_response = generate_email_content(profile_data)
+                
+                # Extract email data
+                email_data = extract_email_content(deepseek_response)
+                
+                # Update row with email content
+                if len(email_data) >= 2:
+                    row.update({
+                        "Mail Subject": email_data[0]["subject"].replace("’", "'"),
+                        "Main Email": email_data[0]["body"].replace("’", "'"),
+                        "Second Subject": email_data[1]["subject"].replace("’", "'"),
+                        "Second Email": email_data[1]["body"].replace("’", "'")
+                    })
+                elif len(email_data) == 1:
+                    row.update({
+                        "Mail Subject": email_data[0]["subject"].replace("’", "'"),
+                        "Main Email": email_data[0]["body"].replace("’", "'"),
+                        "Second Subject": "",
+                        "Second Email": ""
+                    })
+                else:
+                    logging.error(f"Failed to generate any email content for row {idx}")
+                    row.update({
+                        "Mail Subject": "",
+                        "Main Email": "",
+                        "Second Subject": "",
+                        "Second Email": ""
+                    })
+                
+                # Write the updated row to the output CSV
+                writer.writerow(row)
+                
+                # Log progress
+                progress_percentage = (idx / total_rows) * 100
+                logging.info(f"Progress: {progress_percentage:.1f}% complete ({idx}/{total_rows})")
+                
+        logging.info(f"CSV processing completed. Output saved to: {output_path}")
+        
+    except Exception as e:
+        logging.error(f"Error processing CSV file: {str(e)}")
+
 if __name__ == "__main__":
     start_time = time.time()
     logging.info("=== Script execution started ===")
     
     try:
-        search_people()
+        # Determine which mode to run in
+        if args.input:
+            # CSV input mode
+            process_csv_file(args.input)
+        else:
+            # Apollo API mode
+            search_people()
+            
         elapsed_time = time.time() - start_time
         logging.info(f"=== Script completed successfully in {elapsed_time:.2f} seconds ===")
     except Exception as e:
         elapsed_time = time.time() - start_time
         logging.error(f"=== Script failed after {elapsed_time:.2f} seconds: {str(e)} ===")
-
-
-
-
-

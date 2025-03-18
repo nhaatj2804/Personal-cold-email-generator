@@ -21,7 +21,7 @@ This project automates the process of retrieving and processing people data from
 1. **Clone the repository**
 
    ```sh
-   git clone https://github.com/your-username/your-repo.git
+   git clone https://git.nobisoft.com.vn/scm/nst/sales_tool.git
    cd your-repo
    ```
 
@@ -43,8 +43,8 @@ This project automates the process of retrieving and processing people data from
      ```env
      APOLLO_API_KEY=your_apollo_api_key
      DEEPSEEK_API_KEY=your_deepseek_api_key
-     DEEPSEEK_PROMPT="Write a personalized email and a follow-up email for a partnership with Nobisoft. Ensure proper formatting with line breaks so the email  are easy to read."
-     CSV_FILENAME=result.csv
+     DEEPSEEK_PROMPT="Write a personalized email and a follow-up email for a partnership with Nobisoft. Ensure proper formatting with line breaks so the email are easy to read."
+     CSV_FILENAME=result.csv -- This only work for mode 1
      PAGE=1
      PER_PAGE=10
      PERSON_TITLES=ceo,cto
@@ -60,11 +60,25 @@ This project automates the process of retrieving and processing people data from
 
 ## Usage
 
+### Running the script normally
+
 Run the script using:
 
 ```sh
 python app.py
 ```
+
+### Running with input CSV
+
+If you want to provide an input file, use the following command:
+
+```sh
+python app.py --input input.csv
+```
+
+This will take `input.csv` as input and generate an `input_with_email.csv` with added email content.
+
+**Note:** Both the Deepseek API Key and DeepSeek Prompt are required for both modes.
 
 ## How It Works
 
