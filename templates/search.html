@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>People Search</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8" style="display: none">
+      <div
+        id="promptValidationModal"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+          <div class="text-center">
+            <svg
+              class="mx-auto mb-4 h-12 w-12 text-yellow-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">
+              DeepSeek Prompt Required
+            </h3>
+            <p class="text-sm text-gray-500 mb-4">
+              Please enter a prompt for personalized email generation.
+            </p>
+            <button
+              id="closePromptModal"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Header with title and import button -->
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">People Search</h1>
+        <div class="flex items-center">
+          <!-- CSV File Import -->
+          <div class="mr-4">
+            <label
+              for="csvFileInput"
+              class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer inline-block"
+            >
+              Import CSV
+            </label>
+            <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
+          </div>
+        </div>
+      </div>
+
+      <!-- File Processing Progress -->
+      <div
+        id="fileProcessingProgress"
+        class="hidden bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-6"
+        role="alert"
+      >
+        <strong class="font-bold">Processing CSV...</strong>
+        <span class="block sm:inline ml-1">This may take a moment.</span>
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"
+            ></div>
+            <div class="ml-4 text-sm text-blue-700">
+              <span id="uploadProgressText">Processing...</span>
+            </div>
+          </div>
+          <button
+            id="cancelUploadButton"
+            class="ml-4 px-4 py-2 bg-red-200 text-red-800 font-medium rounded-md hover:bg-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 hidden"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- CSV Download After Import Section -->
+      <div
+        id="csvDownloadSection"
+        class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6"
+      >
+        <strong class="font-bold">CSV Processed Successfully!</strong>
+        <span class="block sm:inline ml-1"
+          >Click the button below to download the processed file.</span
+        >
+        <div class="mt-2 flex items-center">
+          <button
+            id="downloadProcessedCsvButton"
+            class="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          >
+            Download Processed CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Form -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Search Filters</h2>
+        <form id="searchForm">
+          <!-- Search Filters Section -->
+          <h3 class="text-lg font-semibold mb-4 text-gray-800">
+            Search Filters
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="mb-4">
+              <label
+                for="person_titles"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Job Titles</label
+              >
+              <input
+                type="text"
+                id="person_titles"
+                name="person_titles"
+                placeholder="e.g. CEO, CTO, Director"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p class="text-xs text-gray-500 mt-1">Separate with commas</p>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="person_locations"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Person Locations</label
+              >
+              <input
+                type="text"
+                id="person_locations"
+                name="person_locations"
+                placeholder="e.g. New York, San Francisco"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p class="text-xs text-gray-500 mt-1">Separate with commas</p>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="person_seniorities"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Seniority Levels</label
+              >
+              <input
+                type="text"
+                id="person_seniorities"
+                name="person_seniorities"
+                placeholder="e.g. senior, executive"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p class="text-xs text-gray-500 mt-1">Separate with commas</p>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="organization_locations"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Organization Locations</label
+              >
+              <input
+                type="text"
+                id="organization_locations"
+                name="organization_locations"
+                placeholder="e.g. Austin, Seattle"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p class="text-xs text-gray-500 mt-1">Separate with commas</p>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="q_organization_domains_list"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Organization Domains</label
+              >
+              <input
+                type="text"
+                id="q_organization_domains_list"
+                name="q_organization_domains_list"
+                placeholder="e.g. example.com, company.org"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p class="text-xs text-gray-500 mt-1">Separate with commas</p>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="contact_email_status"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Email Status</label
+              >
+              <select
+                id="contact_email_status"
+                name="contact_email_status"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Any status</option>
+                <option value="verified">Verified</option>
+                <option value="unverified">Unverified</option>
+                <option value="likely_to_engage">Likely to engage</option>
+                <option value="unavailable">Unavailable</option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="organization_num_employees_ranges"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Employee Ranges</label
+              >
+              <select
+                id="organization_num_employees_ranges"
+                name="organization_num_employees_ranges"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Any size</option>
+                <option value="1-10">1-10</option>
+                <option value="11-50">11-50</option>
+                <option value="51-200">51-200</option>
+                <option value="201-500">201-500</option>
+                <option value="501-1000">501-1000</option>
+                <option value="1001-5000">1001-5000</option>
+                <option value="5001-10000">5001-10000</option>
+                <option value="10001+">10001+</option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="q_keywords"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Keywords</label
+              >
+              <input
+                type="text"
+                id="q_keywords"
+                name="q_keywords"
+                placeholder="e.g. AI, healthcare, finance"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="per_page"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Results Per Page</label
+              >
+              <input
+                type="number"
+                id="per_page"
+                name="per_page"
+                min="1"
+                max="1000"
+                value="10"
+                placeholder="Enter number (1-1000)"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <!-- User Information and Prompt Section -->
+          <div class="border-t pt-6 mt-6">
+            <h3 class="text-lg font-semibold mb-4 text-gray-800">
+              Your Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label
+                  for="your_name"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Your Name<span class="text-red-500"> *</span></label
+                >
+                <input
+                  type="text"
+                  id="your_name"
+                  name="your_name"
+                  required
+                  placeholder="Enter your full name"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="your_position"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Your Position<span class="text-red-500"> *</span></label
+                >
+                <input
+                  type="text"
+                  id="your_position"
+                  name="your_position"
+                  required
+                  placeholder="Enter your job title"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="your_contact"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Your Contact Information<span class="text-red-500">
+                    *</span
+                  ></label
+                >
+                <input
+                  type="text"
+                  id="your_contact"
+                  name="your_contact"
+                  required
+                  placeholder="Email or phone number"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label
+                for="deepseek_prompt"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >DeepSeek Prompt<span class="text-red-500"> *</span></label
+              >
+              <textarea
+                id="deepseek_prompt"
+                name="deepseek_prompt"
+                placeholder="Write personalize email for partnership with Nobisoft"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[50px]"
+                rows="10"
+              ></textarea>
+            </div>
+          </div>
+        </form>
+
+        <div class="flex justify-center mt-6">
+          <button
+            id="searchButton"
+            class="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Search
+          </button>
+          <button
+            id="cancelSearchButton"
+            class="hidden ml-4 px-6 py-2 bg-red-200 text-red-800 font-medium rounded-md hover:bg-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          >
+            Cancel Search
+          </button>
+          <button
+            id="resetButton"
+            class="ml-4 px-6 py-2 bg-gray-200 text-gray-800 font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Indicator and Search Progress -->
+      <div id="searchProgress" class="hidden">
+        <div class="flex justify-center items-center my-4">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"
+          ></div>
+          <p class="ml-4 text-lg text-gray-700">Searching...</p>
+        </div>
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1">
+            <span id="progressMessage" class="text-sm text-gray-600"
+              >Initializing search...</span
+            >
+            <span id="progressPercentage" class="text-sm text-gray-600"
+              >0%</span
+            >
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div
+              id="searchProgressBar"
+              class="bg-blue-600 h-2.5 rounded-full transition-all duration-200 ease-in-out"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="resultsContainer" class="hidden">
+        <h2 class="text-2xl font-semibold mb-4">Search Results</h2>
+        <p id="resultsSummary" class="mb-4 text-gray-600"></p>
+
+        <!-- Table View -->
+        <div class="overflow-x-auto mb-6">
+          <table class="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr class="bg-gray-100">
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Email
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Website
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  First Name
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Last Name
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Title
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Company
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Mail Subject
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Main Email
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Second Subject
+                </th>
+                <th
+                  class="py-3 px-4 border-b border-gray-200 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
+                  Second Email
+                </th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody">
+              <!-- Table rows will be inserted here by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Export Button -->
+        <div class="flex justify-end mb-6">
+          <button
+            id="exportButton"
+            class="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          >
+            Export to CSV
+          </button>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="mt-8 flex justify-center">
+          <button
+            id="prevPage"
+            class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-l-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            Previous
+          </button>
+          <div
+            id="pageIndicator"
+            class="px-4 py-2 bg-gray-100 border-t border-b border-gray-300"
+          >
+            Page <span id="currentPage">1</span>
+          </div>
+          <button
+            id="nextPage"
+            class="px-4 py-2 bg-gray-200 text-gray-800 font-medium rounded-r-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      <!-- No Results Message -->
+      <div id="noResultsMessage" class="hidden text-center py-10">
+        <svg
+          class="mx-auto h-12 w-12 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">No results found</h3>
+        <p class="mt-1 text-gray-500">
+          Try adjusting your search filters or try different keywords.
+        </p>
+      </div>
+
+      <!-- Error Message Modal -->
+      <div
+        id="errorMessage"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
+          <div class="text-center">
+            <svg
+              class="mx-auto mb-4 h-12 w-12 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Error</h3>
+            <p id="errorText" class="text-sm text-gray-500 mb-4">
+              Something went wrong.
+            </p>
+            <button
+              id="closeErrorModal"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Immediately hide container on page load
+      document.querySelector(".container").style.display = "none";
+
+      // Check authentication on page load and add interceptor for all requests
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Add axios interceptor to handle 401 responses globally
+        axios.interceptors.response.use(
+          (response) => response,
+          (error) => {
+            if (error.response) {
+              if (
+                error.response.status === 401 ||
+                (error.response.data &&
+                  error.response.data.detail ===
+                    "Could not validate credentials")
+              ) {
+                // Clear any stored credentials
+                localStorage.clear();
+                sessionStorage.clear();
+                // Force redirect to login
+                window.location.replace("/login");
+              }
+            }
+            return Promise.reject(error);
+          }
+        );
+
+        try {
+          // Try to make an authenticated request to check login status
+          const response = await axios.get("/peoples/", {
+            params: { per_page: 1 }, // Minimal query just to check auth
+          });
+
+          if (response.data && response.status === 200) {
+            // If successful, show the UI
+            document.querySelector(".container").style.display = "block";
+          } else {
+            throw new Error("Invalid response");
+          }
+        } catch (error) {
+          // Clear any stored credentials
+          localStorage.clear();
+          sessionStorage.clear();
+          // Redirect to login for any auth errors
+          window.location.replace("/login");
+        }
+      });
+
+      // Global variables
+      let currentPage = 1;
+      let currentSearchParams = {};
+      let searchResults = [];
+
+      // DOM elements
+      const searchForm = document.getElementById("searchForm");
+      const searchButton = document.getElementById("searchButton");
+      const resetButton = document.getElementById("resetButton");
+      const cancelSearchButton = document.getElementById("cancelSearchButton");
+      const exportButton = document.getElementById("exportButton");
+      const searchProgress = document.getElementById("searchProgress");
+      const searchProgressBar = document.getElementById("searchProgressBar");
+      const resultsContainer = document.getElementById("resultsContainer");
+      const resultsTableBody = document.getElementById("resultsTableBody");
+      const resultsSummary = document.getElementById("resultsSummary");
+      const noResultsMessage = document.getElementById("noResultsMessage");
+      const errorMessage = document.getElementById("errorMessage");
+      const errorText = document.getElementById("errorText");
+      const pagination = document.getElementById("pagination");
+      const prevPageButton = document.getElementById("prevPage");
+      const nextPageButton = document.getElementById("nextPage");
+      const currentPageSpan = document.getElementById("currentPage");
+      const csvFileInput = document.getElementById("csvFileInput");
+      const fileProcessingProgress = document.getElementById(
+        "fileProcessingProgress"
+      );
+      const progressBar = document.getElementById("progressBar");
+      const downloadProcessedCsvButton = document.getElementById(
+        "downloadProcessedCsvButton"
+      );
+
+      // Event listeners
+      document.addEventListener("DOMContentLoaded", () => {
+        searchButton.addEventListener("click", performSearch);
+        resetButton.addEventListener("click", resetForm);
+        exportButton.addEventListener("click", exportToCSV);
+        prevPageButton.addEventListener("click", goToPreviousPage);
+        nextPageButton.addEventListener("click", goToNextPage);
+        csvFileInput.addEventListener("change", handleFileUpload);
+        downloadProcessedCsvButton.addEventListener(
+          "click",
+          downloadProcessedCsv
+        );
+        cancelSearchButton.addEventListener("click", cancelSearch);
+
+        // Add error modal close handler
+        document
+          .getElementById("closeErrorModal")
+          .addEventListener("click", () => {
+            document.getElementById("errorMessage").classList.add("hidden");
+          });
+
+        // Close error modal when clicking outside
+        document
+          .getElementById("errorMessage")
+          .addEventListener("click", (event) => {
+            if (event.target === document.getElementById("errorMessage")) {
+              document.getElementById("errorMessage").classList.add("hidden");
+            }
+          });
+      });
+
+      let processedCsvBlob = null;
+      let processedCsvFilename = null;
+
+      function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Get CSV download section reference
+        const csvDownloadSection =
+          document.getElementById("csvDownloadSection");
+
+        // Clear any previous download sections
+        csvDownloadSection.classList.add("hidden");
+
+        // Validate file type
+        if (!file.name.endsWith(".csv")) {
+          const errorModal = document.getElementById("errorMessage");
+          const errorTextEl = document.getElementById("errorText");
+          errorTextEl.textContent =
+            "Invalid file type. Please upload a valid CSV file.";
+          errorModal.classList.remove("hidden");
+          csvFileInput.value = ""; // Reset file input
+          return;
+        }
+
+        // Validate file size (e.g., 10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+          const errorModal = document.getElementById("errorMessage");
+          const errorTextEl = document.getElementById("errorText");
+          errorTextEl.textContent =
+            "File size too large. Please upload a file smaller than 10MB.";
+          errorModal.classList.remove("hidden");
+          csvFileInput.value = ""; // Reset file input
+          return;
+        }
+
+        // Get the DeepSeek prompt and validate
+        const deepseekPrompt = document
+          .getElementById("deepseek_prompt")
+          .value.trim();
+        if (deepseekPrompt === "") {
+          const promptValidationModal = document.getElementById(
+            "promptValidationModal"
+          );
+          promptValidationModal.classList.remove("hidden");
+
+          const closeModal = () =>
+            promptValidationModal.classList.add("hidden");
+          document.getElementById("closePromptModal").onclick = closeModal;
+          promptValidationModal.onclick = (event) => {
+            if (event.target === promptValidationModal) closeModal();
+          };
+          csvFileInput.value = ""; // Reset file input
+          return;
+        }
+
+        // Get and validate user information
+        const yourName = document.getElementById("your_name").value.trim();
+        const yourPosition = document
+          .getElementById("your_position")
+          .value.trim();
+        const yourContact = document
+          .getElementById("your_contact")
+          .value.trim();
+
+        if (!yourName || !yourPosition || !yourContact) {
+          errorMessage.classList.remove("hidden");
+          errorText.textContent =
+            "Please fill in all required fields (Your Name, Position, and Contact Information).";
+          csvFileInput.value = ""; // Reset file input
+          return;
+        }
+
+        let cancelTokenSource = axios.CancelToken.source();
+
+        // Handle cancel button click
+        const handleCancel = () => {
+          // Cancel the request
+          cancelTokenSource.cancel("Operation cancelled by user");
+
+          // Clean up after a short delay to show the cancellation state
+          setTimeout(() => {
+            document
+              .getElementById("cancelUploadButton")
+              .classList.add("hidden");
+            csvFileInput.value = "";
+
+            // Reset error messages and download section
+            errorMessage.classList.add("hidden");
+            document
+              .getElementById("csvDownloadSection")
+              .classList.add("hidden");
+
+            // Remove event handler to prevent memory leaks
+            document.getElementById("cancelUploadButton").onclick = null;
+          }, 1000);
+        };
+
+        document.getElementById("cancelUploadButton").onclick = handleCancel;
+
+        // Show file processing progress
+        fileProcessingProgress.classList.remove("hidden");
+        document
+          .getElementById("cancelUploadButton")
+          .classList.remove("hidden");
+
+        // Hide all feedback elements
+        resultsContainer.classList.add("hidden");
+        noResultsMessage.classList.add("hidden");
+        errorMessage.classList.add("hidden");
+        csvDownloadSection.classList.add("hidden");
+
+        // Create FormData object
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Add user information and DeepSeek prompt
+        if (deepseekPrompt.trim() !== "") {
+          formData.append("deepseek_prompt", deepseekPrompt.trim());
+        }
+        if (yourName) {
+          formData.append("your_name", yourName);
+        }
+        if (yourPosition) formData.append("your_position", yourPosition);
+        if (yourContact) formData.append("your_contact", yourContact);
+
+        // Configure request with cancellation and upload progress
+        const config = {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          cancelToken: cancelTokenSource.token,
+          onUploadProgress: (progressEvent) => {
+            document.getElementById("uploadProgressText").textContent =
+              "Processing...";
+          },
+        };
+
+        // Send file to server
+        axios
+          .post("/process-csv/", formData, config)
+          .then((response) => {
+            const data = response.data;
+            if (data.success) {
+              // Store blob for download
+              processedCsvBlob = new Blob([data.csv_content], {
+                type: "text/csv",
+              });
+              processedCsvFilename = data.filename;
+
+              // Show download section and hide progress
+              csvDownloadSection.classList.remove("hidden");
+              fileProcessingProgress.classList.add("hidden");
+              document
+                .getElementById("cancelUploadButton")
+                .classList.add("hidden");
+            } else {
+              throw new Error(data.message || "Failed to process CSV file");
+            }
+          })
+          .catch((error) => handleUploadError(error))
+          .finally(() => {
+            // Reset file input
+            csvFileInput.value = "";
+            // Hide progress bar
+            fileProcessingProgress.classList.add("hidden");
+            document
+              .getElementById("cancelUploadButton")
+              .classList.add("hidden");
+          });
+      }
+      // Handle upload error
+
+      function handleUploadError(error) {
+        // Check if request was cancelled
+        if (axios.isCancel(error)) {
+          console.log("File upload cancelled");
+          return; // Don't show error message for cancelled requests
+        }
+
+        // Reset all progress indicators and UI state
+        fileProcessingProgress.classList.add("hidden");
+        document.getElementById("uploadProgressText").textContent =
+          "Processing...";
+        document.getElementById("cancelUploadButton").classList.add("hidden");
+        document.getElementById("csvDownloadSection").classList.add("hidden");
+        csvFileInput.value = "";
+
+        // Reset processed CSV data
+        processedCsvBlob = null;
+        processedCsvFilename = null;
+
+        // Initialize error modal
+        const errorModal = document.getElementById("errorMessage");
+        const errorTextEl = document.getElementById("errorText");
+
+        let errorMessage = "An error occurred while processing the file.";
+
+        if (error.name === "NetworkError" || !navigator.onLine) {
+          errorMessage =
+            "Network error. Please check your internet connection and try again.";
+        } else if (error.response) {
+          const responseData = error.response.data;
+
+          if (typeof responseData === "object" && responseData.detail) {
+            // Handle structured error responses
+            const detail = responseData.detail;
+            switch (detail.type) {
+              case "file_type_error":
+                errorMessage = "Invalid file type. Please upload a CSV file.";
+                break;
+              case "missing_columns":
+                errorMessage = `Missing required columns: ${detail.missing_columns.join(
+                  ", "
+                )}`;
+                break;
+              case "no_valid_rows":
+                errorMessage =
+                  "No valid rows found in the CSV file. Please check the file format.";
+                break;
+              case "processing_error":
+                errorMessage = `Error processing row ${detail.row}: ${detail.message}`;
+                break;
+              case "unexpected_error":
+                errorMessage =
+                  detail.message ||
+                  "An unexpected error occurred while processing the file.";
+                break;
+              default:
+                errorMessage =
+                  detail.message ||
+                  "An error occurred while processing the file.";
+            }
+          } else if (error.response.status === 413) {
+            errorMessage = "File too large. Please try a smaller file.";
+          }
+        }
+
+        // Display error message
+        errorTextEl.textContent = errorMessage;
+        errorModal.classList.remove("hidden");
+
+        // Log error for debugging
+        console.error("File upload error:", error);
+      }
+
+      // Download processed CSV
+      function downloadProcessedCsv() {
+        if (processedCsvBlob) {
+          const url = window.URL.createObjectURL(processedCsvBlob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = processedCsvFilename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          // Hide download section
+          csvDownloadSection.classList.add("hidden");
+          processedCsvBlob = null;
+        }
+      }
+
+      // Global variable for active SSE connection
+      let activeEventSource = null;
+
+      async function performSearch() {
+        const deepseekPrompt = document
+          .getElementById("deepseek_prompt")
+          .value.trim();
+
+        // Get user information fields
+        const yourName = document.getElementById("your_name").value.trim();
+        const yourPosition = document
+          .getElementById("your_position")
+          .value.trim();
+        const yourContact = document
+          .getElementById("your_contact")
+          .value.trim();
+
+        // Validate required fields
+        if (!yourName || !yourPosition || !yourContact || !deepseekPrompt) {
+          let missingFields = [];
+          if (!yourName) missingFields.push("Your Name");
+          if (!yourPosition) missingFields.push("Your Position");
+          if (!yourContact) missingFields.push("Contact Information");
+          if (!deepseekPrompt) missingFields.push("DeepSeek Prompt");
+
+          errorMessage.classList.remove("hidden");
+          errorText.textContent = `Please fill in all required fields: ${missingFields.join(
+            ", "
+          )}`;
+          return;
+        }
+
+        // Reset UI state
+        searchProgress.classList.remove("hidden");
+        searchProgressBar.style.width = "0%";
+        resultsContainer.classList.add("hidden");
+        noResultsMessage.classList.add("hidden");
+        errorMessage.classList.add("hidden");
+        cancelSearchButton.classList.remove("hidden");
+
+        // Close any existing SSE connection
+        if (activeEventSource) {
+          activeEventSource.close();
+        }
+
+        // Build query parameters
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams();
+
+        // Add user information to params
+        params.append("your_name", yourName);
+        params.append("your_position", yourPosition);
+        params.append("your_contact", yourContact);
+
+        // Add other form fields
+        for (const [key, value] of formData.entries()) {
+          if (value.trim()) {
+            params.append(key, value.trim());
+          }
+        }
+
+        params.append("page", currentPage);
+        currentSearchParams = Object.fromEntries(params.entries());
+
+        try {
+          // Create new SSE connection
+          const eventSource = new EventSource(`/peoples/?${params.toString()}`);
+          activeEventSource = eventSource;
+
+          // Handle successful connection
+          eventSource.onopen = () => {
+            console.log("SSE connection established");
+            searchProgressBar.style.width = "10%";
+            document.getElementById("progressPercentage").textContent = "10%";
+            document.getElementById("progressMessage").textContent =
+              "Initializing search...";
+          };
+
+          // Handle incoming messages
+          eventSource.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              console.log(data);
+
+              if (data.redirect) {
+                eventSource.close();
+                window.location.replace(data.redirect);
+                return;
+              }
+
+              if (data.success) {
+                // Update progress bar, percentage display and message
+                console.log("Received data:", data); // Debug log
+
+                // Calculate progress based on status or use explicit progress
+                let progress = 0;
+                const progressMessageElement =
+                  document.getElementById("progressMessage");
+
+                if (data.status) {
+                  switch (data.status) {
+                    case "initializing":
+                      progress = 20;
+                      progressMessageElement.textContent =
+                        "Initializing search...";
+                      break;
+                    case "retrieving":
+                      progress = 40;
+                      progressMessageElement.textContent =
+                        "Retrieving contact information...";
+                      break;
+                    case "processing":
+                      progress = 60;
+                      progressMessageElement.textContent = "Processing data...";
+                      break;
+                    case "generating":
+                      progress = 80;
+                      progressMessageElement.textContent =
+                        "Generating emails...";
+                      break;
+                    case "finalizing":
+                      progress = 90;
+                      progressMessageElement.textContent =
+                        "Finalizing results...";
+                      break;
+                  }
+                } else if (data.progress !== undefined) {
+                  progress = Math.round(data.progress);
+                  // Update message based on progress percentage
+                  if (progress < 20) {
+                    progressMessageElement.textContent =
+                      "Initializing search...";
+                  } else if (progress < 40) {
+                    progressMessageElement.textContent =
+                      "Retrieving contact information...";
+                  } else if (progress < 60) {
+                    progressMessageElement.textContent = "Processing data...";
+                  } else if (progress < 80) {
+                    progressMessageElement.textContent = "Generating emails...";
+                  } else {
+                    progressMessageElement.textContent =
+                      "Finalizing results...";
+                  }
+                }
+
+                // Update progress bar and percentage
+                searchProgressBar.style.width = `${progress}%`;
+                document.getElementById(
+                  "progressPercentage"
+                ).textContent = `${progress}%`;
+
+                // Update results in real-time
+                if (data.results) {
+                  searchResults = data.results;
+                  displayResults({
+                    total_people: data.total_people || data.results.length,
+                    results: data.results,
+                  });
+                }
+
+                // Handle completion
+                if (!data.in_progress) {
+                  // Complete progress and cleanup
+                  searchProgressBar.style.width = "100%";
+                  setTimeout(() => {
+                    searchProgress.classList.add("hidden");
+                    searchProgressBar.style.width = "0%";
+                    document.getElementById("progressPercentage").textContent =
+                      "0%";
+                    cancelSearchButton.classList.add("hidden");
+                  }, 500);
+
+                  // Show final results or no results message
+                  if (searchResults.length > 0) {
+                    displayResults({
+                      total_people: data.total_people || searchResults.length,
+                      results: searchResults,
+                    });
+                  } else {
+                    noResultsMessage.classList.remove("hidden");
+                  }
+
+                  // Close connection
+                  eventSource.close();
+                  activeEventSource = null;
+                }
+              } else if (data.error) {
+                throw new Error(data.error);
+              }
+            } catch (error) {
+              console.error("Error processing SSE message:", error);
+              handleSearchError(error);
+              eventSource.close();
+              activeEventSource = null;
+            }
+          };
+
+          // Handle errors
+          eventSource.onerror = (error) => {
+            console.error("SSE connection error:", error);
+            handleSearchError(error);
+            eventSource.close();
+            activeEventSource = null;
+          };
+        } catch (error) {
+          handleSearchError(error);
+        }
+      }
+
+      // Handle search errors
+      function handleSearchError(error) {
+        if (activeEventSource) {
+          activeEventSource.close();
+          activeEventSource = null;
+        }
+
+        // Reset search UI
+        searchProgress.classList.add("hidden");
+        searchProgressBar.style.width = "0%";
+        document.getElementById("progressPercentage").textContent = "0%";
+        cancelSearchButton.classList.add("hidden");
+
+        // Show error in modal
+        const errorModal = document.getElementById("errorMessage");
+        const errorTextEl = document.getElementById("errorText");
+        errorTextEl.textContent =
+          error.message || "Something went wrong with the search.";
+        errorModal.classList.remove("hidden");
+
+        // Add click handler to close modal when clicking outside
+        const closeModalOnOutsideClick = (e) => {
+          if (e.target === errorModal) {
+            errorModal.classList.add("hidden");
+            errorModal.removeEventListener("click", closeModalOnOutsideClick);
+          }
+        };
+        errorModal.addEventListener("click", closeModalOnOutsideClick);
+      }
+
+      // Cancel search function
+      function cancelSearch() {
+        if (activeEventSource) {
+          activeEventSource.close();
+          activeEventSource = null;
+        }
+        searchProgress.classList.add("hidden");
+        searchProgressBar.style.width = "0%";
+        document.getElementById("progressMessage").textContent =
+          "Initializing search...";
+        document.getElementById("progressPercentage").textContent = "0%";
+        cancelSearchButton.classList.add("hidden");
+      }
+
+      // Display search results in table format
+      function displayResults(data) {
+        // Clear previous results
+        resultsTableBody.innerHTML = "";
+
+        // Update results summary
+
+        // Show results container
+        resultsContainer.classList.remove("hidden");
+
+        // Create and append table rows
+        data.results.forEach((result) => {
+          const personData = result.person_data;
+          const emailContent = result.generated_email_content || [];
+
+          // Create table row
+          const row = document.createElement("tr");
+          row.classList.add("hover:bg-gray-50");
+
+          // Get email data from generated content
+          const firstEmail = emailContent[0] || {};
+          const secondEmail = emailContent[1] || {};
+
+          // Map field names to match the expected JSON structure
+          const mailSubject =
+            firstEmail["Mail Subject"] || firstEmail.subject || "";
+          const mainEmail = firstEmail["Main Email"] || firstEmail.body || "";
+          const secondSubject =
+            secondEmail["Second Subject"] || secondEmail.subject || "";
+          const secondEmailBody =
+            secondEmail["Second Email"] || secondEmail.body || "";
+
+          // Populate row with data
+          row.innerHTML = `
+            <td class="py-2 px-4 border-b border-gray-200">${
+              personData.email || "N/A"
+            }</td>
+            <td class="py-2 px-4 border-b border-gray-200">${
+              personData.organization?.website || "N/A"
+            }</td>
+            <td class="py-2 px-4 border-b border-gray-200">${
+              personData.first_name || "N/A"
+            }</td>
+            <td class="py-2 px-4 border-b border-gray-200">${
+              personData.last_name || "N/A"
+            }</td>
+            <td class="py-2 px-4 border-b border-gray-200">${
+              personData.title || "N/A"
+            }</td>
+            <td class="py-2 px-4 border-b border-gray-200">${
+              personData.organization?.name || "N/A"
+            }</td>
+            <td class="py-2 px-4 border-b border-gray-200">${mailSubject}</td>
+            <td class="py-2 px-4 border-b border-gray-200">${mainEmail}</td>
+            <td class="py-2 px-4 border-b border-gray-200">${secondSubject}</td>
+            <td class="py-2 px-4 border-b border-gray-200">${secondEmailBody}</td>
+          `;
+
+          // Add row to table
+          resultsTableBody.appendChild(row);
+        });
+
+        // Update pagination
+        updatePagination(data.total_people, currentSearchParams.per_page || 10);
+      }
+
+      // Export results to CSV
+      function exportToCSV() {
+        if (!searchResults || searchResults.length === 0) {
+          return;
+        }
+
+        // Show loading indicator for the export process
+        const buttonText = exportButton.textContent;
+        exportButton.textContent = "Exporting...";
+        exportButton.disabled = true;
+
+        // Send current results to the backend and get CSV file
+        axios
+          .post(
+            "/export-csv/",
+            { results: searchResults },
+            {
+              responseType: "blob", // Important: this tells axios to expect binary data
+            }
+          )
+          .then((response) => {
+            // Create and trigger download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            const currentDate = new Date().toISOString().split("T")[0];
+            link.setAttribute("download", `search_results_${currentDate}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Reset button state
+            exportButton.textContent = buttonText;
+            exportButton.disabled = false;
+          })
+          .catch((error) => {
+            console.error("Error exporting CSV:", error);
+
+            // Show error in modal
+            const errorModal = document.getElementById("errorMessage");
+            const errorTextEl = document.getElementById("errorText");
+            errorTextEl.textContent =
+              "Failed to export results to CSV. Please try again.";
+            errorModal.classList.remove("hidden");
+
+            // Reset button state
+            exportButton.textContent = buttonText;
+            exportButton.disabled = false;
+          });
+      }
+
+      // Reset search form
+      function resetForm() {
+        searchForm.reset();
+        resultsContainer.classList.add("hidden");
+        noResultsMessage.classList.add("hidden");
+        errorMessage.classList.add("hidden");
+        currentPage = 1;
+        searchResults = [];
+      }
+
+      // Update pagination controls
+      function updatePagination(totalItems, perPage) {
+        perPage = parseInt(perPage);
+        const totalPages = Math.ceil(totalItems / perPage);
+
+        // Update current page indicator
+        currentPageSpan.textContent = currentPage;
+
+        // Enable/disable previous button
+        if (currentPage <= 1) {
+          prevPageButton.disabled = true;
+          prevPageButton.classList.add("opacity-50", "cursor-not-allowed");
+        } else {
+          prevPageButton.disabled = false;
+          prevPageButton.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+
+        // Enable/disable next button
+        if (currentPage >= totalPages) {
+          nextPageButton.disabled = true;
+          nextPageButton.classList.add("opacity-50", "cursor-not-allowed");
+        } else {
+          nextPageButton.disabled = false;
+          nextPageButton.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+      }
+
+      // Go to next page
+      function goToNextPage() {
+        if (!nextPageButton.disabled) {
+          currentPage++;
+          performSearch();
+        }
+      }
+
+      // Go to previous page
+      function goToPreviousPage() {
+        if (!prevPageButton.disabled) {
+          currentPage--;
+          performSearch();
+        }
+      }
+    </script>
+  </body>
+</html>

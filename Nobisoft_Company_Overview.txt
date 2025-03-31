@@ -1,0 +1,95 @@
+Nobisoft – Trusted IT Outsourcing Provider 
+
+About Us 
+
+Founded in 2020 by a team of passionate IT experts, Nobisoft has rapidly grown into a leading software development and consulting company based in Vietnam. We provide world-class outsourcing solutions, combining cutting-edge technologies, proven efficiency, and exceptional quality to help businesses thrive in a fast-changing digital world. 
+ 
+With a customer-centric mindset, Nobisoft constantly improves its services, delivery processes, and technology adoption. We take pride in delivering solutions that empower businesses, drive innovation, and unlock new opportunities. 
+
+Why Choose Nobisoft? 
+
+✔ End-to-End Software Development: Full-cycle services from requirement analysis to deployment and support. 
+
+✔ Dedicated Offshore Development Center (ODC): Efficient team scaling with skilled engineers. 
+
+✔ Flexible Engagement Models: T&M and Fixed-Price models to match different project needs and budgets. 
+
+✔ Customer-Centric Approach: Tailor-made, scalable, high-performance solutions. 
+
+Our Services 
+
+🔹 Web, Mobile, and Desktop Application Development 
+
+🔹 AI Development & AI Integration 
+
+🔹 Game Development 
+
+🔹 Cybersecurity & Privacy Solutions 
+
+🔹 Cloud & DevOps Solutions 
+
+🔹 UI/UX Design & Development 
+
+🔹 Cross-Platform & Cloud Application Development 
+
+Technology Stack 
+
+🚀 Backend: NodeJS, Java, .NET Core, Python, Golang, PHP, Ruby 
+🚀 Frontend: ReactJS, AngularJS, VueJS, JavaScript, TypeScript, Svelte 
+🚀 Mobile: React Native, Flutter, Swift, Kotlin 
+🚀 Game Development: Unity, C# 
+🚀 AI: TensorFlow, PyTorch, OpenAI, LLM, Azure AI Services 
+🚀 Database: MongoDB, MS SQL, MySQL, PostgreSQL, Redis 
+🚀 DevOps & Monitoring: Jenkins, Docker, Raven, Graylog, gRPC, New Relic 
+🚀 Cybersecurity: Penetration Testing 
+🚀 Cloud Solutions: Azure, AWS, GCP 
+
+Cooperation Models 
+
+ODC – Offshore Development Center – A scalable and cost-effective solution for long-term projects. Our IT professionals act as an extension of your in-house team with seamless collaboration. 
+
+Project-Based – Ideal for well-defined requirements and fixed budgets, covering planning to delivery. 
+
+Time & Materials – Flexible and adaptive model, suitable for projects with evolving requirements. 
+
+Domain Expertise 
+
+Logistics 
+
+Manufacturing 
+
+Healthcare 
+
+E-commerce 
+
+Banking & Finance 
+
+Real Estate / Construction 
+
+Edtech 
+
+Cybersecurity 
+
+Target Markets 
+
+USA, UK, Germany, Europe, Korea, Japan, Vietnam, Singapore, Australia 
+
+Selected AI Case Studies 
+
+• AI Geology Platform: Real-time geological data analysis and collaboration – Australia 
+
+• RevBot System: AI/LLM-driven sales strategy assistant integrated with HubSpot – USA 
+
+• ExitRoute: Computer vision-based indoor navigation from floor plans – Korea 
+
+• Text-to-Speech for Vietnamese: Deep learning-powered TTS system – Vietnam 
+
+• eKYC System: AI-based identity verification and onboarding – Vietnam 
+
+• Chest X-ray Analysis: AI assistant for radiologists – Vietnam 
+
+• Voicebot App: Voice-activated banking transactions – Vietnam 
+
+• Music Recommendation: AI-driven personalized music recommendation – Vietnam 
+
+• Real-time Inference Optimization: High-speed ML inference using TensorRT – Vietnam 

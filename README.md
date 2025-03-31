@@ -1,31 +1,43 @@
-# People Data Processing with Apollo API & DeepSeek
+# Apollo API & DeepSeek Email Generator
 
-This project automates the process of retrieving and processing people data from the Apollo API, generating personalized email content using DeepSeek, and saving the results in a CSV file.
+A web application that automates lead generation and personalized email creation using the Apollo API and DeepSeek AI.
 
 ## Features
 
-- Fetches person and organization data from Apollo API.
-- Filters and structures relevant data.
-- Uses DeepSeek AI to generate personalized email content.
-- Saves processed data into a CSV file.
-- Logs all actions for easy debugging and monitoring.
+- **Authentication System**: Secure login with JWT token-based authentication
+- **Apollo API Integration**: Search and retrieve detailed contact information
+- **DeepSeek AI Email Generation**: Create personalized outreach emails based on prospect data
+- **Real-time Progress Updates**: Stream results as they're processed
+- **CSV Import/Export**: Process existing CSV contact lists or export search results
+- **User-friendly Interface**: Clean, responsive web interface
 
-## Prerequisites
+## Technology Stack
+
+- **Backend**: FastAPI (Python)
+- **Authentication**: JWT tokens with cookie support
+- **API Integration**: Apollo API for lead data
+- **AI Integration**: DeepSeek AI for email generation
+- **Frontend**: HTML, JavaScript with SSE (Server-Sent Events) for real-time updates
+
+## Setup and Installation
+
+### Prerequisites
 
 - Python 3.7+
-- An Apollo API Key
-- A DeepSeek API Key
+- Apollo API Key
+- DeepSeek API Key
+- Secret key for JWT token generation
 
-## Installation
+### Installation
 
 1. **Clone the repository**
 
    ```sh
-   git clone https://git.nobisoft.com.vn/scm/nst/sales_tool.git
-   cd your-repo
+   git clone https://github.com/yourusername/apollo-deepseek-email.git
+   cd apollo-deepseek-email
    ```
 
-2. **Create a virtual environment (optional but recommended)**
+2. **Create a virtual environment**
 
    ```sh
    python -m venv venv
@@ -39,62 +51,106 @@ This project automates the process of retrieving and processing people data from
    ```
 
 4. **Set up environment variables**
-   - Create a `.env` file in the root directory and add the following:
-     ```env
-     APOLLO_API_KEY=your_apollo_api_key
-     DEEPSEEK_API_KEY=your_deepseek_api_key
-     DEEPSEEK_PROMPT="Write a personalized email and a follow-up email for a partnership with Nobisoft. Ensure proper formatting with line breaks so the email are easy to read."
-     CSV_FILENAME=result.csv -- This only work for mode 1
-     PAGE=1
-     PER_PAGE=10
-     PERSON_TITLES=ceo,cto
-     PERSON_LOCATIONS=usa,uk
-     PERSON_SENIORITIES=Executive
-     ORGANIZATION_LOCATIONS=usa,uk
-     Q_ORGANIZATION_DOMAINS_LIST=apollo.io,microsoft.com
-     CONTACT_EMAIL_STATUS=verified,unverified
-     ORGANIZATION_IDS=
-     ORGANIZATION_NUM_EMPLOYEES_RANGES=1,50
-     Q_KEYWORDS=ai, research
-     ```
+   Create a `.env` file in the root directory with the following:
+
+   ```
+   APOLLO_API_KEY=your_apollo_api_key
+   DEEPSEEK_API_KEY=your_deepseek_api_key
+   INITIAL_DEEPSEEK_PROMPT="Your default prompt for email generation"
+   SECRET_KEY=your_jwt_secret_key
+   ```
+
+5. **Create templates directory**
+   Make sure you have a `templates` directory containing `login.html` and `search.html` templates
+
+6. **Create company overview file**
+   Create a file named `Nobisoft_Company_Overview.txt` with your company information
 
 ## Usage
 
-### Running the script normally
-
-Run the script using:
+### Starting the Server
 
 ```sh
-python app.py
+uvicorn app:app --reload
 ```
 
-### Running with input CSV
+The application will be available at http://localhost:8000
 
-If you want to provide an input file, use the following command:
+### Authentication
 
-```sh
-python app.py --input input.csv
-```
+- Navigate to http://localhost:8000/login
 
-This will take `input.csv` as input and generate an `input_with_email.csv` with added email content.
+### Search People
 
-**Note:** Both the Deepseek API Key and DeepSeek Prompt are required for both modes.
+After logging in, you'll be redirected to the search page where you can:
 
-## How It Works
+1. Enter search criteria for Apollo API
+2. Customize the email generation prompt
+3. Add your personal information for email signatures
+4. View results in real-time as they're processed
+5. Export results to CSV
 
-1. **Search for people**: The script fetches people data from the Apollo API using filters from `.env`.
-2. **Process each person**: Extracts relevant details and organization data.
-3. **Generate email content**: Uses DeepSeek to generate email subjects and bodies.
-4. **Save to CSV**: Stores the processed data in a CSV file.
-5. **Log progress**: Tracks execution time and potential errors.
+### CSV Processing
 
-## Logging
+You can also upload an existing CSV file containing prospect information to generate personalized emails for each contact.
 
-- Logs are saved to `app.log`.
-- Logs include request statuses, errors, and execution times.
+## API Endpoints
+
+### Authentication
+
+- `POST /token` - OAuth2 token endpoint
+- `POST /login` - Form-based login
+- `GET /logout` - Log out and clear session
+
+### Main Features
+
+- `GET /peoples/` - Search people with Apollo API and generate emails (streaming)
+- `GET /person-detail/{person_id}` - Get detailed information for a specific person
+- `POST /export-csv/` - Export current results to CSV
+- `POST /process-csv/` - Process an uploaded CSV file
+
+## CSV Format
+
+### Required columns for CSV upload:
+
+- First Name
+- Last Name
+- Title
+- Company
+- Email
+- Seniority
+- Departments
+- \# Employees
+- Industry
+- Keywords
+- City
+- State
+- Country
+- Company City
+- Company State
+- Company Country
+- Technologies
+
+## Security Considerations
+
+- JWT tokens expire after 60 minutes
+- Passwords should be hashed in production environments
+- Secure httponly cookies are used for session management
+
+## Customization
+
+### Email Generation Prompt
+
+You can customize the DeepSeek prompt to generate different styles of emails based on your needs. The system combines:
+
+- Your personal information (name, position, contact)
+- Company overview from the text file
+- Prospect information from Apollo API
+- Your custom prompt instructions
 
 ## Troubleshooting
 
-- **Invalid API keys**: Check that your `.env` file contains the correct API keys.
-- **Rate limits**: Apollo API has rate limits. If requests fail, try again later.
-- **Dependency issues**: Run `pip install -r requirements.txt` to ensure all dependencies are installed.
+- **Authentication Issues**: Check that your JWT secret key is properly set
+- **API Errors**: Verify your Apollo API key is valid and rate limits aren't exceeded
+- **Email Generation Failures**: Check that your DeepSeek API key is valid
+- **CSV Processing Errors**: Ensure your CSV has all the required columns
